@@ -7,47 +7,63 @@ namespace OpenText
 {
     public partial class Window : Form
     {
-        const string NewFileTitle = "New File - Open Text";
-        const string TitleEnd = " - Open Text";
+        string NewFileTitle = "New File - Open Text";
+        string TitleEnd = " - Open Text";
 
         FileHandle? OpenFile = null;
-        string DefaultPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        log Logger;
+       
+        bool SubWin = false;
 
-        public Window()
+        public Window(bool subWin = false)
         {
-            Logger = new(DefaultPath);
             InitializeComponent();
-            this.Text = NewFileTitle;
-
-            RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\OpenText");
-            if (key != null)
+            SubWin = subWin;
+            if (!SubWin)
             {
-                var _KeepOpen = key.GetValue("KeepOpen");
-                if(_KeepOpen != null && _KeepOpen.ToString() == "true"){
-                    keepOpen_CheckBox.Checked = true;
-                    var FilePath = key.GetValue("FilePath");
-                    if (FilePath != null)
+                this.Text = NewFileTitle;
+                RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\OpenText");
+                if (key != null)
+                {
+                    var _KeepOpen = key.GetValue("KeepOpen");
+                    if (_KeepOpen != null && _KeepOpen.ToString() == "true")
                     {
-                        Open(FilePath.ToString(), true);
-                    }
-                    var _WordWarp = key.GetValue("WordWarp");
-                    if (_WordWarp != null)
-                    {
-                        if (_WordWarp.ToString() == "1")
+                        keepOpen_CheckBox.Checked = true;
+                        var FilePath = key.GetValue("FilePath");
+                        if (FilePath != null)
                         {
-                            WordWarp.Checked = true;
-                            WordWarp_Click(this, new EventArgs());
+                            Open(FilePath.ToString(), true);
                         }
-                        if (_WordWarp.ToString() == "0")
+                        var _WordWarp = key.GetValue("WordWarp");
+                        if (_WordWarp != null)
                         {
-                            WordWarp.Checked = false;
-                            WordWarp_Click(this, new EventArgs());
+                            if (_WordWarp.ToString() == "1")
+                            {
+                                WordWarp.Checked = true;
+                                WordWarp_Click(this, new EventArgs());
+                            }
+                            if (_WordWarp.ToString() == "0")
+                            {
+                                WordWarp.Checked = false;
+                                WordWarp_Click(this, new EventArgs());
+                            }
                         }
+                        key.Close();
                     }
-                    key.Close();
                 }
             }
+            else
+            {
+                NewFileTitle += " - SubWindow";
+                TitleEnd += " - SubWindow";
+                this.Text = NewFileTitle;
+                this.keepOpen_CheckBox.Enabled= false;
+                WordWarp.Checked = Program.GetWordWarp();
+            }
+        }
+
+        public bool GetWordWarp()
+        {
+            return WordWarp.Checked;
         }
 
         private void Open(string path, bool DelOnFail = false)
@@ -68,7 +84,7 @@ namespace OpenText
             }
             else
             {
-                Logger.WriteLine("!!ERROR " + OpenFile.FileContents);
+                Program.Logger.WriteLine("!!ERROR " + OpenFile.FileContents);
                 MessageBox.Show("!!ERROR " + OpenFile.FileContents);
                 OpenFile.Close();
                 OpenFile = null;
@@ -80,7 +96,7 @@ namespace OpenText
             string? Path = null;
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.InitialDirectory = DefaultPath;
+                openFileDialog.InitialDirectory = Program.DefaultPath;
                 openFileDialog.RestoreDirectory = true;
                 openFileDialog.Multiselect = false;
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -133,7 +149,7 @@ namespace OpenText
             string? path = null;
             using (SaveFileDialog saveFileDialog = new SaveFileDialog())
             {
-                saveFileDialog.InitialDirectory = DefaultPath;
+                saveFileDialog.InitialDirectory = Program.DefaultPath;
                 saveFileDialog.RestoreDirectory = true;
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
@@ -152,23 +168,31 @@ namespace OpenText
 
         private void Window_FormClosing(object sender, FormClosingEventArgs e)
         {
-            RegistryKey key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\OpenText");
-            if (key != null)
+            if (!SubWin)
             {
-                if (keepOpen_CheckBox.Checked)
+                RegistryKey key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\OpenText");
+                if (key != null)
                 {
-                    key.SetValue("KeepOpen", "true");
-                    if (OpenFile != null) key.SetValue("FilePath", OpenFile.FilePath);
-                    else key.DeleteValue("FilePath");
-                    if (WordWarp.Checked == true) key.SetValue("WordWarp", "1");
-                    else key.SetValue("WordWarp", "0");
+                    if (keepOpen_CheckBox.Checked)
+                    {
+                        key.SetValue("KeepOpen", "true");
+                        if (OpenFile != null) key.SetValue("FilePath", OpenFile.FilePath);
+                        else key.DeleteValue("FilePath");
+                        if (WordWarp.Checked == true) key.SetValue("WordWarp", "1");
+                        else key.SetValue("WordWarp", "0");
+                    }
+                    else
+                    {
+                        key.SetValue("KeepOpen", "false");
+                    }
                 }
-                else
-                {
-                    key.SetValue("KeepOpen", "false");
-                }
+                key.Close();
             }
-            key.Close();
+        }
+
+        private void newWindow_button_Click(object sender, EventArgs e)
+        {
+            Program.MakeSubwin();
         }
     }
 }

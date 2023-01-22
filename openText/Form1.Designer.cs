@@ -36,6 +36,7 @@
             this.WordWarp = new System.Windows.Forms.CheckBox();
             this.saveAsButton = new System.Windows.Forms.Button();
             this.keepOpen_CheckBox = new System.Windows.Forms.CheckBox();
+            this.newWindow_button = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // openButton
@@ -109,11 +110,22 @@
             this.keepOpen_CheckBox.Text = "Keep Open";
             this.keepOpen_CheckBox.UseVisualStyleBackColor = true;
             // 
+            // newWindow_button
+            // 
+            this.newWindow_button.Location = new System.Drawing.Point(593, 12);
+            this.newWindow_button.Name = "newWindow_button";
+            this.newWindow_button.Size = new System.Drawing.Size(90, 23);
+            this.newWindow_button.TabIndex = 7;
+            this.newWindow_button.Text = "New Window";
+            this.newWindow_button.UseVisualStyleBackColor = true;
+            this.newWindow_button.Click += new System.EventHandler(this.newWindow_button_Click);
+            // 
             // Window
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 561);
+            this.Controls.Add(this.newWindow_button);
             this.Controls.Add(this.keepOpen_CheckBox);
             this.Controls.Add(this.saveAsButton);
             this.Controls.Add(this.WordWarp);
@@ -139,5 +151,6 @@
         private CheckBox WordWarp;
         private Button saveAsButton;
         private CheckBox keepOpen_CheckBox;
+        private Button newWindow_button;
     }
 }
