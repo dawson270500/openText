@@ -6,5 +6,7 @@ A small text editor written in C#
  
  Future Features
   - Open a new window (Created, but not in release)
+  - Keep open unsaved files
+  - Keep open on multiple windows
  
  Released on The Unlicense License
