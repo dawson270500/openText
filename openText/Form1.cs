@@ -10,7 +10,7 @@ namespace OpenText
         string NewFileTitle = "New File - Open Text";
         string TitleEnd = " - Open Text";
         string TempFolder = Program.DefaultPath + "\\.OpenText";
-        string TempFile = "Unsaved";
+        string TempFile = "\\Unsaved.txt";
         FileHandle? OpenFile = null;
 
         bool Portable = false;
@@ -27,11 +27,11 @@ namespace OpenText
                 TitleEnd += " Portable";
                 NewFileTitle += " Portable";
             }
-            if (!SubWin)
+            if (!SubWin && !Portable)
             {
                 this.Text = NewFileTitle;
                 RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\OpenText");
-                if (key != null && !Portable)
+                if (key != null)
                 {
                     var _KeepOpen = key.GetValue("KeepOpen");
                     if (_KeepOpen != null && _KeepOpen.ToString() == "true")
@@ -46,9 +46,11 @@ namespace OpenText
                         }
                         else
                         {
-                            if(!FileHandle.DirExist(TempFolder)) FileHandle.CreateDir(TempFolder);
-                            else Open(TempFolder + TempFile, true);
-
+                            if (!FileHandle.DirExist(TempFolder)) FileHandle.CreateDir(TempFolder);
+                            else
+                            {
+                                Open(TempFolder + TempFile, true);
+                            }
                         }
                         var _WordWarp = key.GetValue("WordWarp");
                         if (_WordWarp != null)
@@ -96,7 +98,7 @@ namespace OpenText
                 }
                 else {
                     inputBox.Text = OpenFile.FileContents;
-                    if (path.Contains(TempFolder)) 
+                    if (path.Contains(TempFile.Replace("\\", ""))) 
                     {
                         OpenFile.Close();
                         OpenFile = null;
@@ -190,18 +192,19 @@ namespace OpenText
 
         private void Window_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (!SubWin)
+            if (!SubWin && !Portable)
             {
                 RegistryKey key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\OpenText");
-                if (key != null && !Portable)
+                if (key != null)
                 {
                     if (keepOpen_CheckBox.Checked)
                     {
                         key.SetValue("KeepOpen", "true");
-                        if (OpenFile != null) key.SetValue("FilePath", OpenFile.FilePath); 
+                        if (OpenFile != null)
+                            key.SetValue("FilePath", OpenFile.FilePath);
                         else
                         {
-                            if(key.GetValue("FilePath") != null) key.DeleteValue("FilePath");
+                            if (key.GetValue("FilePath") != null) key.DeleteValue("FilePath");
                             OpenFile = new(TempFolder + TempFile);
                             OpenFile.Save(inputBox.Text);
                             OpenFile.Close();
