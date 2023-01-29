@@ -27,11 +27,11 @@ namespace OpenText
                 TitleEnd += " Portable";
                 NewFileTitle += " Portable";
             }
-            if (!SubWin && !Portable)
+            if (!SubWin)
             {
                 this.Text = NewFileTitle;
                 RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\OpenText");
-                if (key != null)
+                if (key != null && !Portable)
                 {
                     var _KeepOpen = key.GetValue("KeepOpen");
                     if (_KeepOpen != null && _KeepOpen.ToString() == "true")
