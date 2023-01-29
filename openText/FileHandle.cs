@@ -39,7 +39,7 @@ namespace OpenText
 
         public void Close(bool delOnClose = false)
         {
-            file.Close();
+            if (file != null) file.Close();
             if (delOnClose)
             {
                 File.Delete(FilePath);
@@ -56,6 +56,7 @@ namespace OpenText
                 {
                     sw.Write(LinesToWrite);
                 }
+                file.Flush();
                 file.Close();
                 file = File.Open(FilePath, FileMode.OpenOrCreate, FileAccess.Read);
             }
@@ -68,9 +69,22 @@ namespace OpenText
             return true;
         }
 
+        public static string ReadTempFile() { 
+            return Path.GetTempFileName(); 
+        }
+
+        public static bool SaveTempFile(string contents)
+        {
+            string fileName = Path.GetFileName(contents);
+            return false;
+        }
+
         public bool Open()
         {
             return false;
         }
+
+        public static bool DirExist(string path) => Directory.Exists(path);
+        public static void CreateDir(string path) => Directory.CreateDirectory(path); 
     }
 }

@@ -9,20 +9,29 @@ namespace OpenText
     {
         string NewFileTitle = "New File - Open Text";
         string TitleEnd = " - Open Text";
-
+        string TempFolder = Program.DefaultPath + "\\.OpenText";
+        string TempFile = "Unsaved";
         FileHandle? OpenFile = null;
-       
+
+        bool Portable = false;
         bool SubWin = false;
 
         public Window(bool subWin = false)
         {
             InitializeComponent();
             SubWin = subWin;
+            if (System.Diagnostics.Process.GetCurrentProcess().ProcessName.Contains("_p"))
+            {
+                Portable = true;
+                keepOpen_CheckBox.Enabled = false;
+                TitleEnd += " Portable";
+                NewFileTitle += " Portable";
+            }
             if (!SubWin)
             {
                 this.Text = NewFileTitle;
                 RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\OpenText");
-                if (key != null)
+                if (key != null && !Portable)
                 {
                     var _KeepOpen = key.GetValue("KeepOpen");
                     if (_KeepOpen != null && _KeepOpen.ToString() == "true")
@@ -31,7 +40,15 @@ namespace OpenText
                         var FilePath = key.GetValue("FilePath");
                         if (FilePath != null)
                         {
+#pragma warning disable CS8604 // No issue with null value, we check on line above
                             Open(FilePath.ToString(), true);
+#pragma warning restore CS8604
+                        }
+                        else
+                        {
+                            if(!FileHandle.DirExist(TempFolder)) FileHandle.CreateDir(TempFolder);
+                            else Open(TempFolder + TempFile, true);
+
                         }
                         var _WordWarp = key.GetValue("WordWarp");
                         if (_WordWarp != null)
@@ -66,20 +83,25 @@ namespace OpenText
             return WordWarp.Checked;
         }
 
-        private void Open(string path, bool DelOnFail = false)
+        private void Open(string path, bool KeepOpen = false)
         {
             OpenFile = new FileHandle(path);
             if (OpenFile.IsOpen)
             {
                 if (OpenFile.FileContents == "")
                 {
-                    OpenFile.Close(DelOnFail);
-                    MessageBox.Show("Unable to open file");
+                    OpenFile.Close(KeepOpen);
+                    if (!KeepOpen) MessageBox.Show("Unable to open file");
                     this.Text =  NewFileTitle;
                 }
                 else {
                     inputBox.Text = OpenFile.FileContents;
-                    this.Text = OpenFile.FileName + TitleEnd;
+                    if (path.Contains(TempFolder)) 
+                    {
+                        OpenFile.Close();
+                        OpenFile = null;
+                    } 
+                    else this.Text = OpenFile.FileName + TitleEnd;
                 }
             }
             else
@@ -171,13 +193,19 @@ namespace OpenText
             if (!SubWin)
             {
                 RegistryKey key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\OpenText");
-                if (key != null)
+                if (key != null && !Portable)
                 {
                     if (keepOpen_CheckBox.Checked)
                     {
                         key.SetValue("KeepOpen", "true");
-                        if (OpenFile != null) key.SetValue("FilePath", OpenFile.FilePath);
-                        else key.DeleteValue("FilePath");
+                        if (OpenFile != null) key.SetValue("FilePath", OpenFile.FilePath); 
+                        else
+                        {
+                            if(key.GetValue("FilePath") != null) key.DeleteValue("FilePath");
+                            OpenFile = new(TempFolder + TempFile);
+                            OpenFile.Save(inputBox.Text);
+                            OpenFile.Close();
+                        }
                         if (WordWarp.Checked == true) key.SetValue("WordWarp", "1");
                         else key.SetValue("WordWarp", "0");
                     }

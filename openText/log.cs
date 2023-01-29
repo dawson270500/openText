@@ -12,7 +12,7 @@ namespace OpenText
 
         public log(string path)
         {
-            LogPath = path + "OpenText.log";
+            LogPath = path + "\\OpenText.log";
         }
 
         public void WriteLine(string text)
